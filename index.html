@@ -1,0 +1,1097 @@
+<html>
+
+<head>
+<title>ICG WebGL &mdash; HW1</title>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+<script type="text/javascript" src="./js/glMatrix-0.9.5.min.js"></script>
+<script type="text/javascript" src="./js/webgl-utils.js"></script>
+
+<!-- 
+    TODO HERE: 
+    modify fragment shader or write another one
+    to implement flat, gouraud and phong shading
+ -->
+<script id="gouraud_fragmentShader" type="fragment">
+    #extension GL_OES_standard_derivatives : enable
+    precision mediump float;
+
+    varying vec4 fragcolor;
+
+    varying vec3 vPosition;
+    varying vec3 vNormal;
+    varying vec3 vFrontColor;
+    
+    void main(void) {
+        gl_FragColor = fragcolor;
+    }
+</script>
+
+<script id="flat_fragmentShader" type="fragment">
+    #extension GL_OES_standard_derivatives : enable
+    precision mediump float;
+
+    varying vec4 fragcolor;
+
+    varying vec3 vPosition;
+    varying vec3 vNormal;
+    varying vec3 vFrontColor;
+    
+    uniform vec3 ulight1;
+    uniform vec3 ulight1color;
+    
+    uniform vec3 ulight2;
+    uniform vec3 ulight2color;
+    
+    uniform vec3 ulight3;
+    uniform vec3 ulight3color;
+    
+    
+    void main(void) {
+        
+        vec3 light1=ulight1;
+        vec3 light1Color=ulight1color;
+        
+        vec3 light2=ulight2;
+        vec3 light2Color=ulight2color;
+        
+        vec3 light3=ulight3;
+        vec3 light3Color=ulight3color;
+        
+        vec3 V = -normalize(vPosition);
+        vec3 N = normalize(cross(dFdx(vPosition), dFdy(vPosition)));
+        vec3 L1 = normalize(light1 - vPosition);
+        vec3 H1 = normalize(L1+V);
+        
+        vec3 L2 = normalize(light2 - vPosition);
+        vec3 H2 = normalize(L2+V);
+        
+        vec3 L3 = normalize(light3 - vPosition);
+        vec3 H3 = normalize(L3+V);
+        
+      
+        float ka = 0.1;
+        float kd = 0.6;
+        float ks = 0.3;
+      
+        vec3 ambient1 = light1Color * ka * vFrontColor;
+        float cos1 = max(dot(L1,N), 0.0);
+        vec3 diffuse1 = light1Color * kd * vFrontColor * cos1;
+        float cosAlpha1 = max(dot(H1,N), 0.0);
+        vec3 specular1 = light1Color * ks * pow(cosAlpha1, 16.0);
+        vec3 flat1 = vec3(0.0, 0.0, 0.0);
+        flat1 = ambient1 + diffuse1 + specular1;
+        
+        vec3 ambient2 = light2Color * ka * vFrontColor;
+        float cos2 = max(dot(L2,N), 0.0);
+        vec3 diffuse2 = light2Color * kd * vFrontColor * cos2;
+        float cosAlpha2 = max(dot(H2,N), 0.0);
+        vec3 specular2 = light2Color * ks * pow(cosAlpha2, 16.0);
+        vec3 flat2 = vec3(0.0, 0.0, 0.0);
+        flat2 = ambient2 + diffuse2 + specular2;
+        
+        vec3 ambient3 = light3Color * ka * vFrontColor;
+        float cos3 = max(dot(L3,N), 0.0);
+        vec3 diffuse3 = light3Color * kd * vFrontColor * cos3;
+        float cosAlpha3 = max(dot(H3,N), 0.0);
+        vec3 specular3 = light3Color * ks * pow(cosAlpha3, 16.0);
+        vec3 flat3 = vec3(0.0, 0.0, 0.0);
+        flat3 = ambient3 + diffuse3 + specular3;
+        
+        gl_FragColor =vec4(flat1+flat2+flat3, 1.0);
+            
+        
+        
+    }
+</script>
+
+<script id="phong_fragmentShader" type="fragment">
+    #extension GL_OES_standard_derivatives : enable
+    precision mediump float;
+
+    varying vec4 fragcolor;
+    
+    uniform vec3 ulight1;
+    uniform vec3 ulight1color;
+    
+    uniform vec3 ulight2;
+    uniform vec3 ulight2color;
+    
+    uniform vec3 ulight3;
+    uniform vec3 ulight3color;
+    
+    varying vec3 vPosition;
+    varying vec3 vNormal;
+    varying vec3 vFrontColor;
+    
+    void main(void) {
+        
+        
+        vec3 light1=ulight1;
+        vec3 light1Color=ulight1color;
+        
+        vec3 light2=ulight2;
+        vec3 light2Color=ulight2color;
+        
+        vec3 light3=ulight3;
+        vec3 light3Color=ulight3color;
+        
+        
+        vec3 V = -normalize(vPosition);
+        vec3 N = normalize(vNormal);
+        vec3 L1 = normalize(light1 - vPosition);
+        vec3 H1 = normalize(L1+V);
+        
+        vec3 L2 = normalize(light2 - vPosition);
+        vec3 H2 = normalize(L2+V);
+        
+        vec3 L3 = normalize(light3 - vPosition);
+        vec3 H3 = normalize(L3+V);
+        
+        float ka = 0.1;
+        float kd = 0.6;
+        float ks = 0.3;
+        
+        vec3 ambient1 = light1Color * ka * vFrontColor;
+        float cos1 = max(dot(L1,N), 0.0);
+        vec3 diffuse1 = light1Color * kd * vFrontColor * cos1;
+        float cosAlpha1 = max(dot(H1,N), 0.0);
+        vec3 specular1 = light1Color * ks * pow(cosAlpha1, 16.0);
+        vec3 phong1 = vec3(0.0, 0.0, 0.0);
+        phong1 = ambient1 + diffuse1 + specular1;
+        
+        vec3 ambient2 = light2Color * ka * vFrontColor;
+        float cos2 = max(dot(L2,N), 0.0);
+        vec3 diffuse2 = light2Color * kd * vFrontColor * cos2;
+        float cosAlpha2 = max(dot(H2,N), 0.0);
+        vec3 specular2 = light2Color * ks * pow(cosAlpha2, 16.0);
+        vec3 phong2 = vec3(0.0, 0.0, 0.0);
+        phong2 = ambient2 + diffuse2 + specular2;
+        
+        vec3 ambient3 = light3Color * ka * vFrontColor;
+        float cos3 = max(dot(L3,N), 0.0);
+        vec3 diffuse3 = light3Color * kd * vFrontColor * cos3;
+        float cosAlpha3 = max(dot(H3,N), 0.0);
+        vec3 specular3 = light3Color * ks * pow(cosAlpha3, 16.0);
+        vec3 phong3 = vec3(0.0, 0.0, 0.0);
+        phong3 = ambient3 + diffuse3 + specular3;
+        
+        
+        gl_FragColor =vec4(phong1+phong2+phong3, 1.0);
+            
+        
+        
+    }
+</script>
+
+<!-- 
+    TODO HERE:
+    modify vertex shader or write another one
+    to implement flat, gouraud and phong shading
+
+    NOTE:
+    if you want to write bonus part (texture mapping),
+    only Teapot.json has extra attribute "vertexTextureCoords"
+    which is used for texture mappping.
+ -->
+<script id="gouraud_vertexShader" type="vertex">
+    #extension GL_OES_standard_derivatives : enable
+    attribute vec3 aVertexPosition;
+    attribute vec3 aFrontColor;
+    attribute vec3 aVertexNormal;
+
+    uniform mat4 uMVMatrix;//model view set by Setup Model-View Matrix
+    uniform mat4 uPMatrix;// p matrix set by Setup Projection Matrix
+    
+    uniform vec3 ulight1;
+    uniform vec3 ulight1color;
+    
+    uniform vec3 ulight2;
+    uniform vec3 ulight2color;
+    
+    uniform vec3 ulight3;
+    uniform vec3 ulight3color;
+    
+	varying vec4 fragcolor;
+    
+    varying vec3 vPosition;
+    varying vec3 vNormal;
+    varying vec3 vFrontColor;
+    
+    void main(void) {
+        
+        /*
+        vec3 light1 = vec3(25, 10, -10);
+        vec3 light1Color = vec3(1.0, 0.0, 0.0);
+        
+        vec3 light2 = vec3(-25, 10, -10);
+        vec3 light2Color = vec3(0.0, 0.0, 1.0);
+        
+        vec3 light3 = vec3(15, 10, -10);
+        vec3 light3Color = vec3(0.5, 0.5, 0.5);
+        */
+        vec3 light1=ulight1;
+        vec3 light1Color=ulight1color;
+        
+        vec3 light2=ulight2;
+        vec3 light2Color=ulight2color;
+        
+        vec3 light3=ulight3;
+        vec3 light3Color=ulight3color;
+        // mode  gouraud,flat and phong shading 1 2 3
+        
+        //gouraud three light
+        
+        vec3 mvVertex = (uMVMatrix * vec4(aVertexPosition, 1.0)).xyz;
+        mat3 normalMatrix = mat3(uMVMatrix);//去掉平移
+        vec3 mvNormal = normalMatrix * aVertexNormal;
+
+        vec3 V = -normalize(mvVertex);
+        vec3 N = normalize(mvNormal);
+        
+        vec3 L1 = normalize(light1 - mvVertex);
+        vec3 H1 = normalize(L1+V);
+        
+        vec3 L2 = normalize(light2 - mvVertex);
+        vec3 H2 = normalize(L2+V);
+        
+        vec3 L3 = normalize(light3 - mvVertex);
+        vec3 H3 = normalize(L3+V);
+
+        float ka = 0.1;
+        float kd = 0.6;
+        float ks = 0.3;
+
+        
+        vec3 ambient = light1Color * ka * aFrontColor;
+        float cos = max(dot(L1,N), 0.0);
+        vec3 diffuse = light1Color * kd * aFrontColor * cos;
+        float cosAlpha = max(dot(H1,N), 0.0);
+        vec3 specular = light1Color * ks * pow(cosAlpha, 16.0);
+        vec3 gouraud1 = vec3(0.0, 0.0, 0.0);
+        gouraud1 = ambient + diffuse + specular;
+        
+        ambient = light2Color * ka * aFrontColor;
+        cos = max(dot(L2,N), 0.0);
+        diffuse = light2Color * kd * aFrontColor * cos;
+        cosAlpha = max(dot(H2,N), 0.0);
+        specular = light2Color * ks * pow(cosAlpha, 16.0);
+        vec3 gouraud2 = vec3(0.0, 0.0, 0.0);
+        gouraud2 = ambient + diffuse + specular;
+        
+        ambient = light3Color * ka * aFrontColor;
+        cos = max(dot(L3,N), 0.0);
+        diffuse = light3Color * kd * aFrontColor * cos;
+        cosAlpha = max(dot(H3,N), 0.0);
+        specular = light3Color * ks * pow(cosAlpha, 16.0);
+        vec3 gouraud3 = vec3(0.0, 0.0, 0.0);
+        gouraud3 = ambient + diffuse + specular;
+        
+        vec3 gouraud = vec3(0.0, 0.0, 0.0);
+        gouraud=gouraud1 +gouraud2+gouraud3;
+        fragcolor = vec4(gouraud, 1.0);
+        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+        
+    }
+</script>
+
+<script id="flat_vertexShader" type="vertex">
+    #extension GL_OES_standard_derivatives : enable
+    attribute vec3 aVertexPosition;
+    attribute vec3 aFrontColor;
+    attribute vec3 aVertexNormal;
+
+    uniform mat4 uMVMatrix;//model view set by Setup Model-View Matrix
+    uniform mat4 uPMatrix;// p matrix set by Setup Projection Matrix
+
+    varying vec4 fragcolor;
+    
+    varying vec3 vPosition;
+    varying vec3 vNormal;
+    varying vec3 vFrontColor;
+    
+    void main(void) {
+        
+        
+        // mode  gouraud,flat and phong shading 1 2 3
+        //flat shading
+        vec3 mvVertex = (uMVMatrix * vec4(aVertexPosition, 1.0)).xyz;
+        mat3 normalMatrix = mat3(uMVMatrix);//去掉平移
+        vec3 mvNormal = normalMatrix * aVertexNormal;
+        vPosition=mvVertex;
+        vFrontColor=aFrontColor;
+        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+            
+        
+    }
+</script>
+
+<script id="phong_vertexShader" type="vertex">
+    #extension GL_OES_standard_derivatives : enable
+    attribute vec3 aVertexPosition;
+    attribute vec3 aFrontColor;
+    attribute vec3 aVertexNormal;
+
+    uniform mat4 uMVMatrix;//model view set by Setup Model-View Matrix
+    uniform mat4 uPMatrix;// p matrix set by Setup Projection Matrix
+
+    
+    uniform vec3 light1;
+    uniform vec3 light2;
+    uniform vec3 light3;
+    uniform vec3 light1Color;
+    uniform vec3 light2Color;
+    uniform vec3 light3Color;
+    
+    varying vec4 fragcolor;
+    
+    varying vec3 vPosition;
+    varying vec3 vNormal;
+    varying vec3 vFrontColor;
+    
+    void main(void) {
+        
+        
+        // mode  gouraud,flat and phong shading 1 2 3
+        //phong shading
+        
+        vec3 mvVertex = (uMVMatrix * vec4(aVertexPosition, 1.0)).xyz;
+        mat3 normalMatrix = mat3(uMVMatrix);//去掉平移
+        vec3 mvNormal = normalMatrix * aVertexNormal;
+        vPosition=mvVertex;
+        vNormal=mvNormal;
+        vFrontColor=aFrontColor;
+        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+        
+    }
+</script>
+
+
+<script type="text/javascript">
+    // common variables
+    var gl;
+    
+
+    var mvMatrix = mat4.create();
+    var pMatrix  = mat4.create();
+    
+    var teapotVertexPositionBuffer_array=[];
+    var teapotVertexNormalBuffer_array=[];
+    var teapotVertexFrontColorBuffer_array=[];
+
+    var teapotAngle = 180;
+    var lastTime    = 0;
+    
+    var model_name=[];
+    model_name[0]="Car_road";
+    model_name[1]="Church_s";
+    model_name[2]="Csie";
+    model_name[3]="Easter";
+    model_name[4]="Fighter";
+    model_name[5]="Kangaroo";
+    model_name[6]="Longteap";
+    model_name[7]="Mercedes";
+    model_name[8]="Mig27";
+    model_name[9]="Patchair";
+    model_name[10]="Plant";
+    model_name[11]="Teapot";
+    model_name[12]="Tomcat";
+  
+
+    function initGL(canvas) {
+        try {
+            gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+            gl.viewportWidth  = canvas.width;
+            gl.viewportHeight = canvas.height;
+        } 
+        catch (e) {
+        }
+
+        if (!gl) {
+            alert("Could not initialise WebGL, sorry :-(");
+        }
+        
+        if(!gl.getExtension('OES_standard_derivatives')) {
+        throw 'extension not support'; }
+
+    }
+
+    function getShader(gl, id) {
+        var shaderScript = document.getElementById(id);
+        if (!shaderScript) {
+            return null;
+        }
+
+        var shaderSource = "";
+        var k = shaderScript.firstChild;
+        while (k) {
+            if (k.nodeType == 3) {
+                shaderSource += k.textContent;
+            }
+
+            k = k.nextSibling;
+        }
+
+        var shader;
+        if (shaderScript.type == "fragment") {
+            shader = gl.createShader(gl.FRAGMENT_SHADER);
+        } 
+        else if (shaderScript.type == "vertex") {
+            shader = gl.createShader(gl.VERTEX_SHADER);
+        } 
+        else {
+            return null;
+        }
+
+        gl.shaderSource(shader, shaderSource);
+        gl.compileShader(shader);
+
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            alert(gl.getShaderInfoLog(shader));
+            return null;
+        }
+
+        return shader;
+    }
+
+    var shaderProgram = [];
+
+    function initShaders(fragmentShader_name,vertexshader_name,shader_program_index) {
+        var fragmentShader = getShader(gl, fragmentShader_name);
+        var vertexShader   = getShader(gl, vertexshader_name);
+        //畫面中如要顯示不同shading效果要多個program
+        shaderProgram[shader_program_index] = gl.createProgram();
+        
+        gl.attachShader(shaderProgram[shader_program_index], vertexShader);
+        gl.attachShader(shaderProgram[shader_program_index], fragmentShader);
+        gl.linkProgram(shaderProgram[shader_program_index]);
+
+        if (!gl.getProgramParameter(shaderProgram[shader_program_index], gl.LINK_STATUS)) {
+            alert("Could not initialise shaders");
+        }
+
+        gl.useProgram(shaderProgram[shader_program_index]);
+
+        shaderProgram[shader_program_index].vertexPositionAttribute = gl.getAttribLocation(shaderProgram[shader_program_index], "aVertexPosition");
+        gl.enableVertexAttribArray(shaderProgram[shader_program_index].vertexPositionAttribute);
+
+        shaderProgram[shader_program_index].vertexFrontColorAttribute = gl.getAttribLocation(shaderProgram[shader_program_index], "aFrontColor");
+        gl.enableVertexAttribArray(shaderProgram[shader_program_index].vertexFrontColorAttribute);
+
+        shaderProgram[shader_program_index].vertexNormalAttribute = gl.getAttribLocation(shaderProgram[shader_program_index], "aVertexNormal");
+        gl.enableVertexAttribArray(shaderProgram[shader_program_index].vertexNormalAttribute);
+
+        shaderProgram[shader_program_index].pMatrixUniform  = gl.getUniformLocation(shaderProgram[shader_program_index], "uPMatrix");
+        shaderProgram[shader_program_index].mvMatrixUniform = gl.getUniformLocation(shaderProgram[shader_program_index], "uMVMatrix");
+        
+        shaderProgram[shader_program_index].light1Uniform  = gl.getUniformLocation(shaderProgram[shader_program_index], "ulight1");
+        shaderProgram[shader_program_index].light2Uniform  = gl.getUniformLocation(shaderProgram[shader_program_index], "ulight2");
+        shaderProgram[shader_program_index].light3Uniform  = gl.getUniformLocation(shaderProgram[shader_program_index], "ulight3");
+        
+        shaderProgram[shader_program_index].light1colorUniform  = gl.getUniformLocation(shaderProgram[shader_program_index], "ulight1color");
+        shaderProgram[shader_program_index].light2colorUniform  = gl.getUniformLocation(shaderProgram[shader_program_index], "ulight2color");
+        shaderProgram[shader_program_index].light3colorUniform  = gl.getUniformLocation(shaderProgram[shader_program_index], "ulight3color");
+        
+        
+    }
+
+    function setMatrixUniforms(shader_program_index) {
+        gl.uniformMatrix4fv(shaderProgram[shader_program_index].pMatrixUniform, false, pMatrix);
+        gl.uniformMatrix4fv(shaderProgram[shader_program_index].mvMatrixUniform, false, mvMatrix);
+        
+        var light1x = document.getElementById("light1x").value;
+        var light1y = document.getElementById("light1y").value;
+        var light1z = document.getElementById("light1z").value;
+        var light2x = document.getElementById("light2x").value;
+        var light2y = document.getElementById("light2y").value;
+        var light2z = document.getElementById("light2z").value;
+        var light3x = document.getElementById("light3x").value;
+        var light3y = document.getElementById("light3y").value;
+        var light3z = document.getElementById("light3z").value;
+        
+    
+        
+        var light1colorx = document.getElementById("light1colorx").value;
+        var light1colory = document.getElementById("light1colory").value;
+        var light1colorz = document.getElementById("light1colorz").value;
+        var light2colorx = document.getElementById("light2colorx").value;
+        var light2colory = document.getElementById("light2colory").value;
+        var light2colorz = document.getElementById("light2colorz").value;
+        var light3colorx = document.getElementById("light3colorx").value;
+        var light3colory = document.getElementById("light3colory").value;
+        var light3colorz = document.getElementById("light3colorz").value;
+        
+        
+        
+        gl.uniform3fv(shaderProgram[shader_program_index].light1Uniform, [light1x, light1y, light1z]);
+        gl.uniform3fv(shaderProgram[shader_program_index].light2Uniform, [light2x, light2y, light2z]);
+        gl.uniform3fv(shaderProgram[shader_program_index].light3Uniform, [light3x, light3y, light3z]);
+        gl.uniform3fv(shaderProgram[shader_program_index].light1colorUniform, [light1colorx, light1colory, light1colorz]);
+        gl.uniform3fv(shaderProgram[shader_program_index].light2colorUniform, [light2colorx, light2colory, light2colorz]);
+        gl.uniform3fv(shaderProgram[shader_program_index].light3colorUniform, [light3colorx, light3colory, light3colorz]);
+        
+    }
+
+    function degToRad(degrees) {
+        return degrees * Math.PI / 180;
+    }
+
+    function handleLoadedTeapot(teapotData) {
+        var teapotVertexPositionBuffer;
+        var teapotVertexNormalBuffer;
+        var teapotVertexFrontColorBuffer;
+        teapotVertexPositionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexPositionBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(teapotData.vertexPositions), gl.STATIC_DRAW);
+        teapotVertexPositionBuffer.itemSize = 3;
+        teapotVertexPositionBuffer.numItems = teapotData.vertexPositions.length / 3;
+        teapotVertexPositionBuffer_array.push(teapotVertexPositionBuffer);
+
+        teapotVertexNormalBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexNormalBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(teapotData.vertexNormals), gl.STATIC_DRAW);
+        teapotVertexNormalBuffer.itemSize = 3;
+        teapotVertexNormalBuffer.numItems = teapotData.vertexNormals.length / 3;
+        teapotVertexNormalBuffer_array.push(teapotVertexNormalBuffer);
+
+        teapotVertexFrontColorBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexFrontColorBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(teapotData.vertexFrontcolors), gl.STATIC_DRAW);
+        teapotVertexFrontColorBuffer.itemSize = 3;
+        teapotVertexFrontColorBuffer.numItems = teapotData.vertexFrontcolors.length / 3;
+        teapotVertexFrontColorBuffer_array.push(teapotVertexFrontColorBuffer);
+    }
+
+    function loadTeapot(input_file_name) {
+        var request = new XMLHttpRequest();
+        request.open("GET", "./model/"+input_file_name+".json");
+        console.log(input_file_name)
+        request.onreadystatechange = function () {
+            if (request.readyState == 4) {
+                handleLoadedTeapot(JSON.parse(request.responseText));
+            }
+        }
+        request.send();
+    }
+
+    /*
+        TODO HERE:
+        add two or more objects showing on the canvas
+        (it needs at least three objects showing at the same time)
+    */
+    function drawScene() {
+        var X = document.getElementById("X").value;
+        var Y = document.getElementById("Y").value;
+        var Z = document.getElementById("Z").value;
+        var shear_scale = document.getElementById("shear_scale").value;
+        var SCALER = document.getElementById("SCALER").value;
+        var SeperatorX = document.getElementById("SeperatorX").value;
+        var SeperatorY = document.getElementById("SeperatorY").value;
+    
+        
+        
+        gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        
+
+        // Setup Projection Matrix
+        mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix);
+                         
+        for(var i=0;i<3;i++)
+        {
+            if (teapotVertexPositionBuffer_array[i]   == null ||
+                teapotVertexNormalBuffer_array[i]     == null ||
+                teapotVertexFrontColorBuffer_array[i] == null) {
+                console.log(i,"return")
+                return;
+            }
+            //var shader_program_index=0;
+            gl.useProgram(shaderProgram[i]);
+            // Setup Model-View Matrix
+            mat4.identity(mvMatrix);
+            mat4.translate(mvMatrix, [X-5+i*SeperatorX, Y-1+i*SeperatorY, Z]);
+            mat4.rotate(mvMatrix, degToRad(teapotAngle), [0, 1, 0]);
+            mat4.scale(mvMatrix,[SCALER, SCALER, SCALER]);
+                             
+            // Setup teapot position data
+            gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexPositionBuffer_array[i]);
+            gl.vertexAttribPointer(shaderProgram[i].vertexPositionAttribute, teapotVertexPositionBuffer_array[i].itemSize, gl.FLOAT, false, 0, 0);
+
+            // Setup teapot front color data
+            gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexFrontColorBuffer_array[i]);
+            gl.vertexAttribPointer(shaderProgram[i].vertexFrontColorAttribute, teapotVertexFrontColorBuffer_array[i].itemSize, gl.FLOAT, false, 0, 0);
+
+            // Setup teapot Vertex Normal data
+            gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexNormalBuffer_array[i]);
+            gl.vertexAttribPointer(shaderProgram[i].vertexNormalAttribute, teapotVertexNormalBuffer_array[i].itemSize, gl.FLOAT, false, 0, 0);
+                             
+            setMatrixUniforms(i);
+            gl.drawArrays(gl.TRIANGLES, 0, teapotVertexPositionBuffer_array[i].numItems);
+            //draw 畫一次多個便複製並平移等等
+        }
+        //  shear Matrix
+        
+        var shearMatrix = mat4.create();
+        var shear = 45;
+        var shear_buufer_index=3;
+        mat4.identity(shearMatrix);
+        shearMatrix[1] = 1 / Math.tan(degToRad(shear));
+        
+        if (teapotVertexPositionBuffer_array[shear_buufer_index]   == null ||
+            teapotVertexNormalBuffer_array[shear_buufer_index]     == null ||
+            teapotVertexFrontColorBuffer_array[shear_buufer_index] == null) {
+            console.log(" shear return")
+            return;
+        }
+        
+        gl.useProgram(shaderProgram[shear_buufer_index]);
+                         
+        mat4.identity(mvMatrix);
+        
+        
+        //mat4.rotate(mvMatrix, degToRad(teapotAngle), [0, 1, 0]);
+        mat4.multiply(mvMatrix, shearMatrix, mvMatrix);
+        mat4.translate(mvMatrix, [2, 0, -10]);
+        mat4.scale(mvMatrix,[shear_scale, shear_scale, shear_scale]);
+                                          
+        // Setup teapot position data
+        gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexPositionBuffer_array[shear_buufer_index]);
+        gl.vertexAttribPointer(shaderProgram[shear_buufer_index].vertexPositionAttribute, teapotVertexPositionBuffer_array[shear_buufer_index].itemSize, gl.FLOAT, false, 0, 0);
+                         
+        // Setup teapot front color data
+        gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexFrontColorBuffer_array[shear_buufer_index]);
+        gl.vertexAttribPointer(shaderProgram[shear_buufer_index].vertexFrontColorAttribute, teapotVertexFrontColorBuffer_array[shear_buufer_index].itemSize, gl.FLOAT, false, 0, 0);
+
+        // Setup teapot Vertex Normal data
+        gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexNormalBuffer_array[shear_buufer_index]);
+        gl.vertexAttribPointer(shaderProgram[shear_buufer_index].vertexNormalAttribute, teapotVertexNormalBuffer_array[shear_buufer_index].itemSize, gl.FLOAT, false, 0, 0);
+                                          
+        setMatrixUniforms(shear_buufer_index);
+        gl.drawArrays(gl.TRIANGLES, 0, teapotVertexPositionBuffer_array[shear_buufer_index].numItems);
+                         
+        gl.useProgram(shaderProgram[shear_buufer_index]);
+                         
+        mat4.identity(mvMatrix);
+                         
+        mat4.translate(mvMatrix, [2, 0.5, -10]);
+                    
+        mat4.scale(mvMatrix,[shear_scale,shear_scale,shear_scale]);
+                                                           
+        gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexPositionBuffer_array[shear_buufer_index]);
+        gl.vertexAttribPointer(shaderProgram[shear_buufer_index].vertexPositionAttribute, teapotVertexPositionBuffer_array[shear_buufer_index].itemSize, gl.FLOAT, false, 0, 0);
+                                          
+        gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexFrontColorBuffer_array[shear_buufer_index]);
+        gl.vertexAttribPointer(shaderProgram[shear_buufer_index].vertexFrontColorAttribute, teapotVertexFrontColorBuffer_array[shear_buufer_index].itemSize, gl.FLOAT, false, 0, 0);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexNormalBuffer_array[shear_buufer_index]);
+        gl.vertexAttribPointer(shaderProgram[shear_buufer_index].vertexNormalAttribute, teapotVertexNormalBuffer_array[shear_buufer_index].itemSize, gl.FLOAT, false, 0, 0);
+                                                           
+        setMatrixUniforms(shear_buufer_index);
+        gl.drawArrays(gl.TRIANGLES, 0, teapotVertexPositionBuffer_array[shear_buufer_index].numItems);
+        
+    }
+
+    function animate() {
+        var timeNow = new Date().getTime();
+        if (lastTime != 0) {
+            var elapsed = timeNow - lastTime;
+            teapotAngle += 0.03 * elapsed;
+        }
+        
+        lastTime = timeNow;
+    }
+
+    function tick() {
+        requestAnimFrame(tick);
+        drawScene();
+        animate();
+    }
+                         
+
+    function webGLStart() {
+        var canvas = document.getElementById("ICG-canvas");
+        var shader_name=[];
+        var element_num=4;
+        shader_name[0]=["flat_fragmentShader","flat_vertexShader"];
+        shader_name[1]=["gouraud_fragmentShader","gouraud_vertexShader"];
+        shader_name[2]=["phong_fragmentShader","phong_vertexShader"];
+        shader_name[3]=["phong_fragmentShader","phong_vertexShader"];
+        initGL(canvas);
+        for(var i=0;i<element_num;i++)
+        {
+            initShaders(shader_name[i][0],shader_name[i][1] ,i);
+            loadTeapot(model_name[i]);
+        }
+        
+
+        gl.clearColor(0.0, 0.2, 0.2, 1.0);
+        gl.enable(gl.DEPTH_TEST);
+
+        tick();
+    }
+</script>
+
+<script type="text/javascript">
+    
+    
+    function switchToCarRoad(){
+        teapotVertexPositionBuffer_array=[];
+        teapotVertexNormalBuffer_array=[];
+        teapotVertexFrontColorBuffer_array=[];
+        shader_name=[];
+        shader_name[0]=["flat_fragmentShader","flat_vertexShader"];
+        shader_name[1]=["gouraud_fragmentShader","gouraud_vertexShader"];
+        shader_name[2]=["phong_fragmentShader","phong_vertexShader"];
+        shader_name[3]=["phong_fragmentShader","phong_vertexShader"];
+        for(var i=0;i<4;i++)
+        {
+            initShaders(shader_name[i][0],shader_name[i][1] ,i);
+            loadTeapot(model_name[0]);
+        }
+        gl.clearColor(0.0, 0.2, 0.2, 1.0);
+        gl.enable(gl.DEPTH_TEST);
+        tick();
+    }
+function switchToChurch_s(){
+    teapotVertexPositionBuffer_array=[];
+    teapotVertexNormalBuffer_array=[];
+    teapotVertexFrontColorBuffer_array=[];
+    shader_name=[];
+    shader_name[0]=["flat_fragmentShader","flat_vertexShader"];
+    shader_name[1]=["gouraud_fragmentShader","gouraud_vertexShader"];
+    shader_name[2]=["phong_fragmentShader","phong_vertexShader"];
+    shader_name[3]=["phong_fragmentShader","phong_vertexShader"];
+    for(var i=0;i<4;i++)
+    {
+        initShaders(shader_name[i][0],shader_name[i][1] ,i);
+        loadTeapot(model_name[1]);
+    }
+    gl.clearColor(0.0, 0.2, 0.2, 1.0);
+    gl.enable(gl.DEPTH_TEST);
+    tick();
+}
+
+function switchToCsie(){
+    teapotVertexPositionBuffer_array=[];
+    teapotVertexNormalBuffer_array=[];
+    teapotVertexFrontColorBuffer_array=[];
+    shader_name=[];
+    shader_name[0]=["flat_fragmentShader","flat_vertexShader"];
+    shader_name[1]=["gouraud_fragmentShader","gouraud_vertexShader"];
+    shader_name[2]=["phong_fragmentShader","phong_vertexShader"];
+    shader_name[3]=["phong_fragmentShader","phong_vertexShader"];
+    for(var i=0;i<4;i++)
+    {
+        initShaders(shader_name[i][0],shader_name[i][1] ,i);
+        loadTeapot(model_name[2]);
+    }
+    gl.clearColor(0.0, 0.2, 0.2, 1.0);
+    gl.enable(gl.DEPTH_TEST);
+    tick();
+}
+
+function switchToEaster(){
+    teapotVertexPositionBuffer_array=[];
+    teapotVertexNormalBuffer_array=[];
+    teapotVertexFrontColorBuffer_array=[];
+    shader_name=[];
+    shader_name[0]=["flat_fragmentShader","flat_vertexShader"];
+    shader_name[1]=["gouraud_fragmentShader","gouraud_vertexShader"];
+    shader_name[2]=["phong_fragmentShader","phong_vertexShader"];
+    shader_name[3]=["phong_fragmentShader","phong_vertexShader"];
+    for(var i=0;i<4;i++)
+    {
+        initShaders(shader_name[i][0],shader_name[i][1] ,i);
+        loadTeapot(model_name[3]);
+    }
+    gl.clearColor(0.0, 0.2, 0.2, 1.0);
+    gl.enable(gl.DEPTH_TEST);
+    tick();
+}
+function switchToFighter(){
+teapotVertexPositionBuffer_array=[];
+teapotVertexNormalBuffer_array=[];
+teapotVertexFrontColorBuffer_array=[];
+shader_name=[];
+shader_name[0]=["flat_fragmentShader","flat_vertexShader"];
+shader_name[1]=["gouraud_fragmentShader","gouraud_vertexShader"];
+shader_name[2]=["phong_fragmentShader","phong_vertexShader"];
+shader_name[3]=["phong_fragmentShader","phong_vertexShader"];
+for(var i=0;i<4;i++)
+{
+    initShaders(shader_name[i][0],shader_name[i][1] ,i);
+    loadTeapot(model_name[4]);
+}
+gl.clearColor(0.0, 0.2, 0.2, 1.0);
+gl.enable(gl.DEPTH_TEST);
+tick();
+}
+
+function switchToKangaroo(){
+teapotVertexPositionBuffer_array=[];
+teapotVertexNormalBuffer_array=[];
+teapotVertexFrontColorBuffer_array=[];
+shader_name=[];
+shader_name[0]=["flat_fragmentShader","flat_vertexShader"];
+shader_name[1]=["gouraud_fragmentShader","gouraud_vertexShader"];
+shader_name[2]=["phong_fragmentShader","phong_vertexShader"];
+shader_name[3]=["phong_fragmentShader","phong_vertexShader"];
+for(var i=0;i<4;i++)
+{
+    initShaders(shader_name[i][0],shader_name[i][1] ,i);
+    loadTeapot(model_name[5]);
+}
+gl.clearColor(0.0, 0.2, 0.2, 1.0);
+gl.enable(gl.DEPTH_TEST);
+tick();
+}
+
+function switchToLongteap(){
+    teapotVertexPositionBuffer_array=[];
+    teapotVertexNormalBuffer_array=[];
+    teapotVertexFrontColorBuffer_array=[];
+    shader_name=[];
+    shader_name[0]=["flat_fragmentShader","flat_vertexShader"];
+    shader_name[1]=["gouraud_fragmentShader","gouraud_vertexShader"];
+    shader_name[2]=["phong_fragmentShader","phong_vertexShader"];
+    shader_name[3]=["phong_fragmentShader","phong_vertexShader"];
+    for(var i=0;i<4;i++)
+    {
+        initShaders(shader_name[i][0],shader_name[i][1] ,i);
+        loadTeapot(model_name[6]);
+    }
+    gl.clearColor(0.0, 0.2, 0.2, 1.0);
+    gl.enable(gl.DEPTH_TEST);
+    tick();
+}
+
+    
+    
+    
+    function switchToMercedes(){
+        teapotVertexPositionBuffer_array=[];
+        teapotVertexNormalBuffer_array=[];
+        teapotVertexFrontColorBuffer_array=[];
+        shader_name=[];
+        shader_name[0]=["flat_fragmentShader","flat_vertexShader"];
+        shader_name[1]=["gouraud_fragmentShader","gouraud_vertexShader"];
+        shader_name[2]=["phong_fragmentShader","phong_vertexShader"];
+        shader_name[3]=["phong_fragmentShader","phong_vertexShader"];
+        for(var i=0;i<4;i++)
+        {
+            initShaders(shader_name[i][0],shader_name[i][1] ,i);
+            loadTeapot(model_name[7]);
+        }
+        gl.clearColor(0.0, 0.2, 0.2, 1.0);
+        gl.enable(gl.DEPTH_TEST);
+        tick();
+    }
+
+    function switchToMig27(){
+        teapotVertexPositionBuffer_array=[];
+        teapotVertexNormalBuffer_array=[];
+        teapotVertexFrontColorBuffer_array=[];
+        shader_name=[];
+        shader_name[0]=["flat_fragmentShader","flat_vertexShader"];
+        shader_name[1]=["gouraud_fragmentShader","gouraud_vertexShader"];
+        shader_name[2]=["phong_fragmentShader","phong_vertexShader"];
+        shader_name[3]=["phong_fragmentShader","phong_vertexShader"];
+        for(var i=0;i<4;i++)
+        {
+            initShaders(shader_name[i][0],shader_name[i][1] ,i);
+            loadTeapot(model_name[8]);
+        }
+        gl.clearColor(0.0, 0.2, 0.2, 1.0);
+        gl.enable(gl.DEPTH_TEST);
+        tick();
+    }
+
+function switchToPatchair(){
+    teapotVertexPositionBuffer_array=[];
+    teapotVertexNormalBuffer_array=[];
+    teapotVertexFrontColorBuffer_array=[];
+    shader_name=[];
+    shader_name[0]=["flat_fragmentShader","flat_vertexShader"];
+    shader_name[1]=["gouraud_fragmentShader","gouraud_vertexShader"];
+    shader_name[2]=["phong_fragmentShader","phong_vertexShader"];
+    shader_name[3]=["phong_fragmentShader","phong_vertexShader"];
+    for(var i=0;i<4;i++)
+    {
+        initShaders(shader_name[i][0],shader_name[i][1] ,i);
+        loadTeapot(model_name[9]);
+    }
+    gl.clearColor(0.0, 0.2, 0.2, 1.0);
+    gl.enable(gl.DEPTH_TEST);
+    tick();
+}
+function switchToPlant(){
+    teapotVertexPositionBuffer_array=[];
+    teapotVertexNormalBuffer_array=[];
+    teapotVertexFrontColorBuffer_array=[];
+    shader_name=[];
+    shader_name[0]=["flat_fragmentShader","flat_vertexShader"];
+    shader_name[1]=["gouraud_fragmentShader","gouraud_vertexShader"];
+    shader_name[2]=["phong_fragmentShader","phong_vertexShader"];
+    shader_name[3]=["phong_fragmentShader","phong_vertexShader"];
+    for(var i=0;i<4;i++)
+    {
+        initShaders(shader_name[i][0],shader_name[i][1] ,i);
+        loadTeapot(model_name[10]);
+    }
+    gl.clearColor(0.0, 0.2, 0.2, 1.0);
+    gl.enable(gl.DEPTH_TEST);
+    tick();
+}
+function switchToTeapot(){
+    teapotVertexPositionBuffer_array=[];
+    teapotVertexNormalBuffer_array=[];
+    teapotVertexFrontColorBuffer_array=[];
+    shader_name=[];
+    shader_name[0]=["flat_fragmentShader","flat_vertexShader"];
+    shader_name[1]=["gouraud_fragmentShader","gouraud_vertexShader"];
+    shader_name[2]=["phong_fragmentShader","phong_vertexShader"];
+    shader_name[3]=["phong_fragmentShader","phong_vertexShader"];
+    for(var i=0;i<4;i++)
+    {
+        initShaders(shader_name[i][0],shader_name[i][1] ,i);
+        loadTeapot(model_name[11]);
+    }
+    gl.clearColor(0.0, 0.2, 0.2, 1.0);
+    gl.enable(gl.DEPTH_TEST);
+    tick();
+}
+function switchToTomcat(){
+    teapotVertexPositionBuffer_array=[];
+    teapotVertexNormalBuffer_array=[];
+    teapotVertexFrontColorBuffer_array=[];
+    shader_name=[];
+    shader_name[0]=["flat_fragmentShader","flat_vertexShader"];
+    shader_name[1]=["gouraud_fragmentShader","gouraud_vertexShader"];
+    shader_name[2]=["phong_fragmentShader","phong_vertexShader"];
+    shader_name[3]=["phong_fragmentShader","phong_vertexShader"];
+    for(var i=0;i<4;i++)
+    {
+        initShaders(shader_name[i][0],shader_name[i][1] ,i);
+        loadTeapot(model_name[12]);
+    }
+    gl.clearColor(0.0, 0.2, 0.2, 1.0);
+    gl.enable(gl.DEPTH_TEST);
+    tick();
+}
+
+
+
+    
+                
+</script>
+
+
+
+</head>
+
+<body onload="webGLStart();">
+    <canvas id="ICG-canvas" style="border: none;" width="1280" height="720"></canvas>
+    <br/>
+    
+    <div class="btn-group" role="group" aria-label="Basic example"
+                style="margin-top:10px; margin-left:10px">
+                <button id="Car_road" onclick="switchToCarRoad()" type="button" class="btn btn-secondary">Car_road</button>
+                <button id="Church_s" onclick="switchToChurch_s()" type="button" class="btn btn-secondary">Church_s</button>
+                <button id="Csie" onclick="switchToCsie()" type="button" class="btn btn-secondary">Csie</button>
+                <button id="Easter" onclick="switchToEaster()" type="button" class="btn btn-secondary">Easter</button>
+                <button id="Fighter" onclick="switchToFighter()" type="button" class="btn btn-secondary">Fighter</button>
+                <button id="Kangaroo" onclick="switchToKangaroo()" type="button" class="btn btn-secondary">Kangaroo</button>
+                <button id="Longteap" onclick="switchToLongteap()" type="button" class="btn btn-secondary">Longteap</button>
+                <button id="Mercedes" onclick="switchToMercedes()" type="button" class="btn btn-secondary">Mercedes</button>
+                <button id="Mig27" onclick="switchToMig27()" type="button" class="btn btn-secondary">Mig27</button>
+                <button id="Patchair" onclick="switchToPatchair()" type="button" class="btn btn-secondary">Patchair</button>
+                <button id="Plant" onclick="switchToPlant()" type="button" class="btn btn-secondary">Plant</button>
+                <button id="Teapot" onclick="switchToTeapot()" type="button" class="btn btn-secondary">Teapot</button>
+                <button id="Tomcat" onclick="switchToTomcat()" type="button" class="btn btn-secondary">Tomcat</button>
+            </div>
+
+
+    
+    <div style="width: 440px; height: 158px; margin-top:10px">
+                <table class="table-condensed">
+                    <tr>
+                        <td width="25%" style="padding-left: 20px">shear_scale:</td>
+                        <td width="25%" colspan="3"><input type="range" id="shear_scale" min="0.01" max="2" step="0.01" value="1"></td>
+                    </tr>
+                    <tr>
+                        <td width="25%" style="padding-left: 20px">X:</td>
+                        <td width="25%" colspan="3"><input type="range" id="X" min="-20" max="20" step="2" value="0"></td>
+                    </tr>
+                    <tr>
+                        <td width="25%" style="padding-left: 20px">Y:</td>
+                        <td width="25%" colspan="3"><input type="range" id="Y" min="-10" max="10" step="2" value="0"></td>
+                    </tr>
+                    <tr>
+                        <td width="25%" style="padding-left: 20px">Z:</td>
+                        <td width="25%" colspan="3"><input type="range" id="Z" min="-100" max="-2" step="2" value="-20"></td>
+                    </tr>
+                    
+                    <tr>
+                        <td width="25%" style="padding-left: 20px">SCALER:</td>
+                        <td width="25%" colspan="3"><input type="range" id="SCALER" min="0.01" max="30" step="0.1" value="1"></td>
+                    </tr>
+                    
+                    <tr>
+                        <td width="25%" style="padding-left: 20px">SeperatorX:</td>
+                        <td width="25%" colspan="3"><input type="range" id="SeperatorX" min="0" max="20" step="0.5" value="1.5"></td>
+                    </tr>
+                    
+                    <tr>
+                        <td width="25%" style="padding-left: 20px">SeperatorY:</td>
+                        <td width="25%" colspan="3"><input type="range" id="SeperatorY" min="0" max="20" step="0.5" value="1.5"></td>
+                    </tr>
+                    
+                </table>
+                <div class="input-group" style="margin-top:10px; margin-left:20px; width: 700px">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="">Light1color(x,y,z)</span>
+                    </div>
+                    <input type="text" class="form-control" id="light1colorx" value=1.0>
+                    <input type="text" class="form-control" id="light1colory" value=0.0>
+                    <input type="text" class="form-control" id="light1colorz" value=0.0>
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="">Light1(x,y,z)</span>
+                    </div>
+                    <input type="text" class="form-control" id="light1x" value=25.0>
+                    <input type="text" class="form-control" id="light1y" value=10.0>
+                    <input type="text" class="form-control" id="light1z" value=-10.0>
+                </div>
+                <div class="input-group" style="margin-top:10px; margin-left:20px; width:700px">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" id="">Light2color(x,y,z)</span>
+                                </div>
+                                <input type="text" class="form-control" id="light2colorx" value=0.0>
+                                <input type="text" class="form-control" id="light2colory" value=1.0>
+                                <input type="text" class="form-control" id="light2colorz" value=0.0>
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" id="">Light2(x,y,z)</span>
+                                </div>
+                                    <input type="text" class="form-control" id="light2x" value=-25.0>
+                                <input type="text" class="form-control" id="light2y" value=10.0>
+                                <input type="text" class="form-control" id="light2z" value=-10.0>
+                            </div>
+                <div class="input-group" style="margin-top:10px; margin-left:20px; margin-bottom:200px;width:700px">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" id="">Light3color(x,y,z)</span>
+                                </div>
+                                <input type="text" class="form-control" id="light3colorx" value=0.0>
+                                <input type="text" class="form-control" id="light3colory" value=0.0>
+                                <input type="text" class="form-control" id="light3colorz" value=1.5>
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" id="">Light3(x,y,z)</span>
+                                </div>
+                                <input type="text" class="form-control" id="light3x" value=0.0>
+                                <input type="text" class="form-control" id="light3y" value=25.0>
+                                <input type="text" class="form-control" id="light3z" value=-10.0>
+                            </div>
+                
+</body>
+
+
+
+</html>
